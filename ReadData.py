@@ -7,8 +7,8 @@ from scipy.ndimage import uniform_filter1d
 import sys
 import zipfile
 
-obj = ['Cigno', 'Andromeda']
-data_path = '../Data/' + obj[1] + '/'
+obj = ['Cigno', 'Andromeda', 'Cassiopea']
+data_path = '../Data/' + obj[0] + '/'
 #files_list = []
 #for file in listdir(data_path):
 #    if file.endswith('.txt'):
@@ -81,9 +81,9 @@ ydata = np.array(linear(df.iloc[:,bch-1:ech]))
 #yfilt = uniform_filter1d(np.average(ydata, axis=0), 5, mode='mirror')
 plt.plot(np.average(ydata, axis=1))
 plt.show()
-yfilt = uniform_filter1d(ydata[110,:], 5, mode='mirror')
+yfilt = uniform_filter1d(ydata[124,:], 5, mode='mirror')
 #plt.plot(xdata, np.average(ydata, axis=0))
-plt.plot(xdata, ydata[110,:])
+plt.plot(xdata, ydata[124,:])
 #plt.plot(xdata, yfilt)
 plt.show()
 

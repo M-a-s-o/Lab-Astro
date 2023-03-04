@@ -20,22 +20,29 @@ def _old_warning_limiti(az: float, alt: float) -> None:
 
 def warning_limiti(az: float, alt: float) -> None:
     xcoords = array([203, 223, 290, 310]).reshape(-1, 1)
-    ycoords = array([19.5, 60.8, 71, 76.2]).reshape(-1, 1)
+    ycoords = array([20, 60.5, 70.5, 75.5]).reshape(-1, 1)
     xdist = KDTree(xcoords).query(az)[0]
     ydist = KDTree(ycoords).query(alt)[0]
     dist = hypot(xdist, ydist)
-    if (dist < 3):
-        print("Attenzione limiti parabola.")
+    #if (dist < 3):
+    #    print("Attenzione limiti parabola.")
+    print(xdist)
+    print(ydist)
+    print(dist)
+    if xdist < 2 and dist <= 15:
+        print("Attenzione azimuth.")
+    if ydist < 1 and dist <= 15:
+        print("Attenzione elevazione.")
     if (az <= 2 or az >= 358):
         print("Attenzione barriera 0-360.")
 
 def top(az: float) -> float:
     if (az >= 203 and az <= 223):
-        return 71
+        return 70.5
     if (az >= 290 and az <= 310):
-        return 60.8
+        return 60.5
     #if (az <= 203 or (az >= 223 and az <= 290) or az >= 310):
-    return 76.2
+    return 75.5
 
 def _old_bottom(az: float) -> float:
     if (az > 158 and az < 346):
@@ -45,7 +52,7 @@ def _old_bottom(az: float) -> float:
     return 35
 
 def bottom(az: float) -> float:
-    return 19.5
+    return 20
 
 def movimenti(az: float, alt: float) -> bool:
     az = abs(az)
