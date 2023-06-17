@@ -4,109 +4,134 @@ import numpy as np
 import re
 import matplotlib.pyplot as plt
 from scipy.ndimage import uniform_filter1d
+from scipy.signal import argrelextrema
 import sys
 import zipfile
+from pprint import pprint
 
 obj = ['Cigno', 'Andromeda', 'Cassiopea']
-data_path = '../Data/' + obj[0] + '/'
-#files_list = []
-#for file in listdir(data_path):
-#    if file.endswith('.txt'):
-#    #if file.endswith('_URSP.txt'):
-#        files_list.append(file)
+data_path = '../Data/' + obj[1] + '/'
 
-# read csv inside zip file
-#ziptest = zipfile.ZipFile(data_path + 'test.zip')
-#print(ziptest.namelist())
-#files_list = ziptest.namelist()
-#ziptest.close()
+begin_channel = 6000  # begin channel
+end_channel = 6400  # end channel
+base_freq = 1.3e9
+bandwidth = 19531.25
+HIline = [1420405751.768, 0.021106114054160]
+#print(np.floor((HIline[0]-base_freq)/bandwidth)+1) # channel 6165, array index 6164
+z_andromeda = -0.001004
+freq_obs = HIline[0]/(1+z_andromeda)
+#print(np.floor((freq_obs-base_freq)/bandwidth)+1) # channel 6238, array index 6237
 
-files_list = listdir(data_path)
+def read_csv_zip(path, lst):
+    # read csv inside zip file and return list
+    ziptest = zipfile.ZipFile(path + 'test.zip')
+    print(ziptest.namelist())
+    lst = ziptest.namelist()
+    ziptest.close()
+    return lst
 
 def keys(var): # oppure usare libreria python natsort
     return [int(num) for num in re.findall("([0-9]{2})", var)]
     # lambda var: [int(num) for num in re.findall("([0-9]{2})", var)]
 
-files_list.sort(key=keys)
-print(files_list)
-#print(files_list[0][0:2])
+def generate_list(path) -> list:
+    lst = listdir(path)
+    lst.sort(key=keys)
+    return lst
+
+def generate_list_with_filter(path) -> list:
+    lst = []
+    for file in listdir(path):
+        if file.endswith('.txt'):
+        #if file.endswith('_URSP.txt'):
+            lst.append(file)
+    return lst
 
 def linear(arr):
     return np.power(10, arr/10)
 
+files_list = generate_list(data_path)
+pprint(dict(enumerate(files_list)))
+
 if len(sys.argv) < 2:
     print("Inserire numero file.")
-    sys.exit(0)
-file_num = int(sys.argv[1]) #range(2, 7+2)
-df = pd.read_csv(data_path + files_list[file_num], usecols = list(range(3,2**13+3)), sep = ';', decimal = ',', header = None, low_memory = True)
-#df = pd.read_csv(ziptest.open(files_list[file_num]), usecols = list(range(3,2**13+3)), sep = ';', decimal = ',', header = None, low_memory = True)
-#ziptest.close()
-#print(df.iloc[:,0])
-print(files_list[file_num])
-arr_avg = np.average(np.array(df), axis=0)
-#arr_avg = np.average(np.array(df.iloc[:,:]), axis=0)
-print(np.argmax(arr_avg))
-base_freq = 1.3e9
-bandwidth = 19531.25
-HIline = [1420405751.768, 0.021106114054160]
-print(np.argmax(arr_avg)*bandwidth+base_freq)
-print(np.floor((HIline[0]-base_freq)/bandwidth)+1) # 6165
-z_andromeda = -0.001004
-freq_obs = HIline[0]/(1+z_andromeda)
-print(np.floor((freq_obs-base_freq)/bandwidth)+1) # 6238
+    sys.exit(1)
 
-#plt.plot(arr_avg)
-#plt.show()
-#plt.plot(linear(arr_avg))
-#plt.show()
+def read_database(file_num):
+    df = pd.read_csv(data_path + files_list[file_num], usecols = list(range(3,2**13+3)), sep = ';', decimal = ',', header = None, low_memory = True, dtype=np.float64)
+    #df = pd.read_csv(ziptest.open(files_list[file_num]), usecols = list(range(3,2**13+3)), sep = ';', decimal = ',', header = None, low_memory = True)
+    #ziptest.close()
+    #print(df.iloc[:,0])
+    print(f"File selezionato: {files_list[file_num]}")
+    #arr_avg = np.average(np.array(df), axis=0) #arr_avg = np.average(np.array(df.iloc[:,:]), axis=0)
 
-#signal = df.iloc[:,6166]
-#plt.plot(signal)
-#singal_avg = signal.rolling(7).mean()
-#plt.plot(singal_avg)
-#plt.show()
+    xdata = np.arange(base_freq, base_freq+8192*bandwidth, bandwidth)[begin_channel-1:end_channel]
+    ydata = np.array(linear(df.iloc[:,begin_channel-1:end_channel])) # linear
+    return xdata, ydata
 
-#filter = uniform_filter1d(signal, 7, mode='mirror')
-#plt.plot(signal)
-#plt.plot(filter)
-#plt.show()
+def plot_temporal_rolling_mean(arr, size = 7, channel_index = 6165):
+    if channel_index is None:
+        signal = np.average(arr, axis=1)
+    else:
+        signal = arr[:, channel_index - begin_channel]
+    #singal_avg = signal.rolling(7).mean() # pandas way
+    #plt.plot(singal_avg)
+    filter = uniform_filter1d(signal, size, mode='mirror') # scipy way
+    plt.plot(signal)
+    plt.plot(filter)
+    plt.show()
 
-#plt.plot(np.arange(1, 8193, 1)[:10], np.average(df.iloc[84-10:84+11,:10], axis=0))
-bch = 6100  # begin channel
-ech = 6300  # end channel
-xdata = np.arange(base_freq, base_freq+8192*bandwidth, bandwidth)[bch-1:ech]
-#ydata = np.average(np.power(10, df.iloc[:,6100:6300]/10), axis=0)
-ydata = np.array(linear(df.iloc[:,bch-1:ech]))
-#print(xdata[6164-6100])
-#yfilt = uniform_filter1d(np.average(ydata, axis=0), 5, mode='mirror')
-plt.plot(np.average(ydata, axis=1))
-plt.show()
-yfilt = uniform_filter1d(ydata[124,:], 5, mode='mirror')
-#plt.plot(xdata, np.average(ydata, axis=0))
-plt.plot(xdata, ydata[124,:])
-#plt.plot(xdata, yfilt)
-plt.show()
+def plot_frequency_rolling_mean(arr, size = 5, time_index = None):
+    if time_index is None:
+        signal = np.average(arr, axis=0)
+    else:
+        signal = arr[time_index,:]
+    filter = uniform_filter1d(signal, size, mode='mirror')
+    plt.plot(signal)
+    plt.plot(filter)
+    plt.show()
 
-yavg = np.average(ydata, axis=1)
-mask = yavg < 1.25e-7
-ymasked = ydata[mask,:]
-plt.plot(xdata, ymasked.T)
-plt.show()
-plt.plot(xdata, np.average(ydata, axis=0))
-#plt.plot(xdata, ydata[60,:])
-plt.show()
+def plot_without_greater_signals(xarr, yarr):
+    yavg = np.average(yarr, axis=1)
+    mask = yavg < 1.25e-7
+    ymasked = yarr[mask,:]
+    plt.plot(xarr, ymasked.T)
+    plt.show()
 
-#find time of max of hydrogen line, requires narrow range of values in xdata
-test = ydata-yavg.reshape(-1,1)
-indexmax = np.unravel_index(test.argmax(), test.shape)
-print(indexmax)
-#print(ydata[indexmax])
-#plt.plot(xdata, ydata[indexmax[0]])
-#plt.show()
+index = 0
 
-# plot equally spaced
-#aaa = np.linspace(0, 5, 6)
-#mesh = np.meshgrid(aaa, aaa, indexing="ij")
-#print(mesh[0])
-#plt.imshow(mesh[0].T, origin='lower')
-#plt.show()
+def plot_file(xarr, yarr):
+    yarr = uniform_filter1d(yarr, 3, mode='mirror')
+    global index
+    plt.plot(xarr, yarr, label='Signal ' + str(index))
+    index += 1
+
+#file_num = int(sys.argv[1]) 
+#xdata, ydata = read_database(file_num)
+#tempavg = np.average(ydata, axis=0)
+
+#extrema = argrelextrema(tempavg[55:85], np.greater)
+#print(extrema)
+#test = xdata[55:85]
+#print(test[extrema[0][1]]-test[extrema[0][0]])
+#print(xdata[55:75])
+
+def plot_files(indexes):
+    lst = []
+    for elem in indexes[1:3]:
+        lst.append(int(elem))
+    ran = range(lst[0], lst[0]+1)
+    if len(indexes) > 2:
+        ran = range(lst[0], lst[1]+1)
+    for arg in ran:
+        xdata, ydata = read_database(arg)
+        tempavg = np.average(ydata, axis=0)
+        print(tempavg[6165-begin_channel])
+        plot_file(xdata, tempavg)
+
+if __name__ == '__main__':
+    plot_files(sys.argv)
+    plt.axvline(HIline[0], color='red', label='HI Line')
+    plt.axvline(freq_obs, color='green')
+    plt.legend()
+    plt.show()

@@ -24,13 +24,13 @@ def CoordsBatch():
     #coord = np.array([[interpol(Angle(str(i) + 'd')), str(i)+'d00m00s'] for i in range(35, 46)]).T
     #CygCoords = SkyCoord(ra=coord[0], dec=coord[1]) # test coords for scan
     
-    coord = np.array([str(i)+'d00m00s' for i in range(39,41+1)])
+    coord = np.array([str(i)+'d00m00s' for i in range(44,47+1)])
     CygCoords = SkyCoord(ra='20h00m00s', dec=coord) # test coords for scan
 
     print(CygCoords)
     step = 1
-    beg = 2
-    times = [datetime(2023, 3, i, 14, 0, 0, tzinfo=TimezoneMilano) for i in range(beg,beg+step*len(coord), step)]
+    beg = 22
+    times = [datetime(2023, 3, i, 3, 30, 0, tzinfo=TimezoneMilano) for i in range(beg,beg+step*len(coord), step)]
     times = Time(times, location=ParabolaCoords)
     print(times)
     AltAzFrame = AltAz(location=ParabolaCoords, obstime=times)
@@ -41,8 +41,8 @@ def CoordsBatch():
     print(f"Azimuth corretto = {(CygCoords.az+off_set)}")
 
 def CoordsSingle():
-    CygCoords = SkyCoord(ra='20h00m00s', dec='36d00m00s') # test coords for scan
-    time = datetime(2023, 3, 5, 6, 0, 0, tzinfo=TimezoneMilano)
+    CygCoords = SkyCoord(ra='20h00m00s', dec='35d00m00s') # test coords for scan
+    time = datetime(2023, 3, 15, 13, 0, 0, tzinfo=TimezoneMilano)
     time = Time(time, location=ParabolaCoords)
 
     AltAzFrame = AltAz(location=ParabolaCoords, obstime=time)
